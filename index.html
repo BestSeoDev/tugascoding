@@ -838,14 +838,23 @@
                     terlambat,
                     tidakHadir,
                     total,
-                    percentage + '%'
+                    percentage
                 ]);
             });
             
-            // Convert to CSV format (Excel compatible)
+            // Convert to CSV format with proper column separation
             let csvContent = '';
             excelData.forEach(row => {
-                csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
+                // Escape cells that contain commas, quotes, or newlines
+                const escapedRow = row.map(cell => {
+                    let cellValue = String(cell);
+                    // If cell contains comma, quote, or newline, wrap in quotes and escape internal quotes
+                    if (cellValue.includes(',') || cellValue.includes('"') || cellValue.includes('\n')) {
+                        cellValue = '"' + cellValue.replace(/"/g, '""') + '"';
+                    }
+                    return cellValue;
+                });
+                csvContent += escapedRow.join(',') + '\r\n';
             });
             
             // Add BOM for proper UTF-8 encoding in Excel
@@ -853,7 +862,9 @@
             csvContent = BOM + csvContent;
             
             // Create and download file
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob([csvContent], { 
+                type: 'text/csv;charset=utf-8;' 
+            });
             const link = document.createElement('a');
             
             if (link.download !== undefined) {
@@ -873,7 +884,7 @@
                 document.body.removeChild(link);
                 
                 // Show success message
-                document.getElementById('successMessage').textContent = `Laporan berhasil diexport ke file: ${filename}`;
+                document.getElementById('successMessage').textContent = `Laporan berhasil diexport ke file: ${filename}. File akan terbuka sebagai tabel terpisah di Excel!`;
                 document.getElementById('successModal').classList.remove('hidden');
                 document.getElementById('successModal').classList.add('flex');
             } else {
@@ -968,5 +979,5 @@
             updateClassInfo();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'975a1b7823e75f71',t:'MTc1NjI4MjM4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'975a225a20f65f71',t:'MTc1NjI4MjY2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
