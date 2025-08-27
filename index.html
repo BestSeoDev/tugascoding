@@ -789,23 +789,6 @@
             const period = document.getElementById('reportPeriod').value;
             const subject = document.getElementById('reportSubject').value;
             
-            // Generate Excel data
-            let excelData = [];
-            
-            // Header row
-            excelData.push([
-                'No',
-                'NIS', 
-                'Nama Siswa',
-                'Kelas',
-                'Jenis Kelamin',
-                'Hadir',
-                'Terlambat', 
-                'Tidak Hadir',
-                'Total Pertemuan',
-                'Persentase Kehadiran'
-            ]);
-            
             // Get students data based on filter
             let studentsToExport = [];
             if (selectedClass === 'semua') {
@@ -815,6 +798,38 @@
             } else {
                 studentsToExport = allStudents[selectedClass];
             }
+            
+            // Create Excel workbook using HTML table format
+            let htmlContent = `
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        table { border-collapse: collapse; width: 100%; }
+                        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; font-weight: bold; }
+                        .number { text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    <h2>Laporan Presensi Siswa</h2>
+                    <p>Periode: ${period} | Kelas: ${selectedClass} | Mata Pelajaran: ${subject}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>NIS</th>
+                                <th>Nama Siswa</th>
+                                <th>Kelas</th>
+                                <th>Jenis Kelamin</th>
+                                <th>Hadir</th>
+                                <th>Terlambat</th>
+                                <th>Tidak Hadir</th>
+                                <th>Total Pertemuan</th>
+                                <th>Persentase Kehadiran</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
             
             // Add student data rows
             studentsToExport.forEach((student, index) => {
@@ -828,42 +843,30 @@
                 const total = hadir + terlambat + tidakHadir;
                 const percentage = Math.round((hadir / total) * 100);
                 
-                excelData.push([
-                    index + 1,
-                    student.nis,
-                    student.name,
-                    student.class,
-                    student.gender === 'L' ? 'Laki-laki' : 'Perempuan',
-                    hadir,
-                    terlambat,
-                    tidakHadir,
-                    total,
-                    percentage
-                ]);
+                htmlContent += `
+                    <tr>
+                        <td class="number">${index + 1}</td>
+                        <td>${student.nis}</td>
+                        <td>${student.name}</td>
+                        <td class="number">${student.class}</td>
+                        <td>${student.gender === 'L' ? 'Laki-laki' : 'Perempuan'}</td>
+                        <td class="number">${hadir}</td>
+                        <td class="number">${terlambat}</td>
+                        <td class="number">${tidakHadir}</td>
+                        <td class="number">${total}</td>
+                        <td class="number">${percentage}%</td>
+                    </tr>`;
             });
             
-            // Convert to CSV format with proper column separation
-            let csvContent = '';
-            excelData.forEach(row => {
-                // Escape cells that contain commas, quotes, or newlines
-                const escapedRow = row.map(cell => {
-                    let cellValue = String(cell);
-                    // If cell contains comma, quote, or newline, wrap in quotes and escape internal quotes
-                    if (cellValue.includes(',') || cellValue.includes('"') || cellValue.includes('\n')) {
-                        cellValue = '"' + cellValue.replace(/"/g, '""') + '"';
-                    }
-                    return cellValue;
-                });
-                csvContent += escapedRow.join(',') + '\r\n';
-            });
+            htmlContent += `
+                        </tbody>
+                    </table>
+                </body>
+                </html>`;
             
-            // Add BOM for proper UTF-8 encoding in Excel
-            const BOM = '\uFEFF';
-            csvContent = BOM + csvContent;
-            
-            // Create and download file
-            const blob = new Blob([csvContent], { 
-                type: 'text/csv;charset=utf-8;' 
+            // Create and download file as Excel format
+            const blob = new Blob([htmlContent], { 
+                type: 'application/vnd.ms-excel;charset=utf-8;' 
             });
             const link = document.createElement('a');
             
@@ -875,7 +878,7 @@
                 const currentDate = new Date().toISOString().split('T')[0];
                 const className = selectedClass === 'semua' ? 'Semua-Kelas' : selectedClass;
                 const subjectName = subject === 'semua' ? 'Semua-Mapel' : subject.replace(/\s+/g, '-');
-                const filename = `Laporan-Presensi_${className}_${subjectName}_${period}_${currentDate}.csv`;
+                const filename = `Laporan-Presensi_${className}_${subjectName}_${period}_${currentDate}.xls`;
                 
                 link.setAttribute('download', filename);
                 link.style.visibility = 'hidden';
@@ -884,7 +887,7 @@
                 document.body.removeChild(link);
                 
                 // Show success message
-                document.getElementById('successMessage').textContent = `Laporan berhasil diexport ke file: ${filename}. File akan terbuka sebagai tabel terpisah di Excel!`;
+                document.getElementById('successMessage').textContent = `Laporan berhasil diexport! File Excel dengan tabel yang rapi telah diunduh: ${filename}`;
                 document.getElementById('successModal').classList.remove('hidden');
                 document.getElementById('successModal').classList.add('flex');
             } else {
@@ -979,5 +982,5 @@
             updateClassInfo();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'975a225a20f65f71',t:'MTc1NjI4MjY2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'975a291bb71b5f71',t:'MTc1NjI4Mjk0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
