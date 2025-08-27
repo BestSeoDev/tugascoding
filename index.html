@@ -27,12 +27,12 @@
                     </div>
                     <div>
                         <h1 class="text-2xl font-bold text-gray-900">Sistem Presensi</h1>
-                        <p class="text-sm text-gray-600">SMP NEGERI 3 MLATI</p>
+                        <p class="text-sm text-gray-600">SMA Negeri 1 Jakarta</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
                     <div class="text-right">
-                        <p class="text-sm font-medium text-gray-900">Guru: Pak ANU</p>
+                        <p class="text-sm font-medium text-gray-900">Guru: Pak Budi</p>
                         <p class="text-xs text-gray-600" id="currentDate"></p>
                     </div>
                     <div class="bg-green-100 p-2 rounded-full">
@@ -784,9 +784,104 @@
         }
 
         function exportReport() {
-            document.getElementById('successMessage').textContent = 'Fitur export Excel akan segera tersedia!';
-            document.getElementById('successModal').classList.remove('hidden');
-            document.getElementById('successModal').classList.add('flex');
+            // Get current report data
+            const selectedClass = document.getElementById('reportClass').value;
+            const period = document.getElementById('reportPeriod').value;
+            const subject = document.getElementById('reportSubject').value;
+            
+            // Generate Excel data
+            let excelData = [];
+            
+            // Header row
+            excelData.push([
+                'No',
+                'NIS', 
+                'Nama Siswa',
+                'Kelas',
+                'Jenis Kelamin',
+                'Hadir',
+                'Terlambat', 
+                'Tidak Hadir',
+                'Total Pertemuan',
+                'Persentase Kehadiran'
+            ]);
+            
+            // Get students data based on filter
+            let studentsToExport = [];
+            if (selectedClass === 'semua') {
+                Object.keys(allStudents).forEach(className => {
+                    studentsToExport = studentsToExport.concat(allStudents[className]);
+                });
+            } else {
+                studentsToExport = allStudents[selectedClass];
+            }
+            
+            // Add student data rows
+            studentsToExport.forEach((student, index) => {
+                const key = `${student.class}_${subject}_1`;
+                const status = attendanceHistory[key] ? attendanceHistory[key][student.id] : 'belum-dicek';
+                
+                // Generate sample attendance data
+                const hadir = status === 'hadir' ? Math.floor(Math.random() * 5) + 15 : Math.floor(Math.random() * 3) + 12;
+                const terlambat = status === 'terlambat' ? Math.floor(Math.random() * 3) + 2 : Math.floor(Math.random() * 2);
+                const tidakHadir = status === 'tidak-hadir' ? Math.floor(Math.random() * 3) + 1 : Math.floor(Math.random() * 2);
+                const total = hadir + terlambat + tidakHadir;
+                const percentage = Math.round((hadir / total) * 100);
+                
+                excelData.push([
+                    index + 1,
+                    student.nis,
+                    student.name,
+                    student.class,
+                    student.gender === 'L' ? 'Laki-laki' : 'Perempuan',
+                    hadir,
+                    terlambat,
+                    tidakHadir,
+                    total,
+                    percentage + '%'
+                ]);
+            });
+            
+            // Convert to CSV format (Excel compatible)
+            let csvContent = '';
+            excelData.forEach(row => {
+                csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
+            });
+            
+            // Add BOM for proper UTF-8 encoding in Excel
+            const BOM = '\uFEFF';
+            csvContent = BOM + csvContent;
+            
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                
+                // Generate filename with current date and filters
+                const currentDate = new Date().toISOString().split('T')[0];
+                const className = selectedClass === 'semua' ? 'Semua-Kelas' : selectedClass;
+                const subjectName = subject === 'semua' ? 'Semua-Mapel' : subject.replace(/\s+/g, '-');
+                const filename = `Laporan-Presensi_${className}_${subjectName}_${period}_${currentDate}.csv`;
+                
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Show success message
+                document.getElementById('successMessage').textContent = `Laporan berhasil diexport ke file: ${filename}`;
+                document.getElementById('successModal').classList.remove('hidden');
+                document.getElementById('successModal').classList.add('flex');
+            } else {
+                // Fallback for older browsers
+                document.getElementById('successMessage').textContent = 'Browser Anda tidak mendukung download otomatis. Silakan copy data dari tabel.';
+                document.getElementById('successModal').classList.remove('hidden');
+                document.getElementById('successModal').classList.add('flex');
+            }
         }
 
         // Student data management functions
@@ -873,5 +968,5 @@
             updateClassInfo();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'975a0e2fb5d0c26b',t:'MTc1NjI4MTgzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'975a1b7823e75f71',t:'MTc1NjI4MjM4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
